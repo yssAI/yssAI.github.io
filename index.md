@@ -1,36 +1,21 @@
-## Welcome to 杨赛赛的博客
+## 杨赛赛的博客
 
-我的[简书主页](https://www.jianshu.com/writer#/notebooks/28756861/notes/32661425)
+关于机器学习，深度学习，强化学习的理解和总结
 
 
-### Markdown
+### 机器学习
+1. 感知机
+2. K近邻
+3. 支持向量机
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+### 深度学习
+1. 全连接神经网络
+2. 卷积神经网络
+3. 循环神经网络
 
-```markdown
-Syntax highlighted code block
+### 强化学习
+1. Q-learning
+2. DQN
+3. DDPG
+4. 蒙特卡洛搜索树
 
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/yssAI/yssAI.github.io/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
