@@ -33,7 +33,7 @@
 这里我们使用2层的LSTM框架，每层有128个隐藏层节点，我们使用tensorflow.nn模块库来定义网络结构层，其中RNNcell是tensorflow中实现RNN的基本单元，是一个抽象类，在实际应用中多用RNNcell的实现子类BasicRNNCell或者BasicLSTMCell，BasicGRUCell；如果需要构建多层的RNN，在TensorFlow中，可以使用tf.nn.rnn_cell.MultiRNNCell函数对RNNCell进行堆叠。模型网络的第一层要对输入数据进行 embedding，可以理解为数据的维度变换，经过两层LSTM后，接着softMax得到一个在全字典上的输出概率。
 模型网络结构如下：
 ![image](https://user-images.githubusercontent.com/43362551/51891576-8142eb80-23da-11e9-84c4-66ffdf971818.png)
-训练时batch_size设为16，为了结果的多样性，训练时每次可以选择topK概率的字符作为输出。
+训练时可以定义batch_size的值，是否进行dropout，为了结果的多样性，训练时在softmax输出层每次可以选择topK概率的字符作为输出。训练时可以使用tensorboard 对网络结构和训练过程可视化展示。这里推荐大家一个在线人工智能建模平台[momodel.cn](momodel.cn)，带有完整的Python和机器学习框架运行环境，并且有免费的GPU可以使用，大家可以训练的时候可以在这个平台上试一下。
 
 定义网络的类的程序代码如下：
 ``` python
