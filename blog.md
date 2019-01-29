@@ -34,7 +34,6 @@
 定义网络的类的程序代码如下：
 ``` python
 
-
 class CharRNNLM(object):
     def __init__(self, is_training, batch_size, vocab_size, w2v_model,
                  hidden_size, max_grad_norm, embedding_size, num_layers,
@@ -56,9 +55,11 @@ class CharRNNLM(object):
         else:
             self.input_size = embedding_size
 
+        # 输入和输入定义
         self.input_data = tf.placeholder(tf.int64, [self.batch_size, self.num_unrollings], name='inputs')
         self.targets = tf.placeholder(tf.int64, [self.batch_size, self.num_unrollings], name='targets')
 
+        # 根据定义选择不同的循环神经网络内核单元
         if self.cell_type == 'rnn':
             cell_fn = tf.nn.rnn_cell.BasicRNNCell
         elif self.cell_type == 'lstm':
@@ -76,12 +77,14 @@ class CharRNNLM(object):
             higher_layer_cell = cell_fn(self.hidden_size, **params)
             cells.append(higher_layer_cell)
 
+        # 训练时是否进行 Dropout
         if is_training and self.dropout > 0:
             cells = [tf.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=1.0-self.dropout) for cell in cells]
 
         # 对lstm层进行堆叠
         multi_cell = tf.nn.rnn_cell.MultiRNNCell(cells)
 
+        # 定义网络模型初始状态
         with tf.name_scope('initial_state'):
             self.zero_state = multi_cell.zero_state(self.batch_size, tf.float32)
             if self.cell_type == 'rnn' or self.cell_type == 'gru':
@@ -111,6 +114,7 @@ class CharRNNLM(object):
             if is_training and self.input_dropout > 0:
                 inputs = tf.nn.dropout(inputs, 1-self.input_dropout)
 
+        # 创建每个切分通道网络层
         with tf.name_scope('slice_inputs'):
             sliced_inputs = [tf.squeeze(input_, [1]) for input_ in tf.split(
                 axis = 1, num_or_size_splits = self.num_unrollings, value = inputs)]
@@ -121,20 +125,21 @@ class CharRNNLM(object):
                 initial_state=self.initial_state)
         self.final_state = final_state
 
+        # 数据变换层，把经过循环神经网络的数据拉伸降维
         with tf.name_scope('flatten_outputs'):
             flat_outputs = tf.reshape(tf.concat(axis = 1, values = outputs), [-1, hidden_size])
 
         with tf.name_scope('flatten_targets'):
             flat_targets = tf.reshape(tf.concat(axis = 1, values = self.targets), [-1])
 
-        # 定义输出层
+        # 定义 softmax 输出层
         with tf.variable_scope('softmax') as sm_vs:
             softmax_w = tf.get_variable('softmax_w', [hidden_size, vocab_size])
             softmax_b = tf.get_variable('softmax_b', [vocab_size])
             self.logits = tf.matmul(flat_outputs, softmax_w) + softmax_b
             self.probs = tf.nn.softmax(self.logits)
 
-        # 定义损失函数
+        # 定义 loss 损失函数
         with tf.name_scope('loss'):
             loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
                     logits = self.logits, labels = flat_targets)
