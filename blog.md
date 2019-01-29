@@ -30,7 +30,11 @@
 
 
 ### 模型构建及训练
-这里我们使用2层的LSTM框架，每层有128个隐藏层节点，batch_size设为16。RNNcell是tensorflow中实现RNN的基本单元，是一个抽象类，在实际应用中多用RNNcell的实现子类BasicRNNCell或者BasicLSTMCell，BasicGRUCell；如果需要构建多层的RNN，在TensorFlow中，可以使用tf.nn.rnn_cell.MultiRNNCell函数对RNNCell进行堆叠。模型网络的第一层要对输入进行 embedding ，可以理解为数据的维度变换，经过两层LSTM后，紧接着Dense Connect和softMax得到一个在全字典上的输出概率，为了结果的多样性，每次可以选择topK概率的字符作为输出。
+这里我们使用2层的LSTM框架，每层有128个隐藏层节点，我们使用tensorflow.nn模块库来定义网络结构层，其中RNNcell是tensorflow中实现RNN的基本单元，是一个抽象类，在实际应用中多用RNNcell的实现子类BasicRNNCell或者BasicLSTMCell，BasicGRUCell；如果需要构建多层的RNN，在TensorFlow中，可以使用tf.nn.rnn_cell.MultiRNNCell函数对RNNCell进行堆叠。模型网络的第一层要对输入数据进行 embedding，可以理解为数据的维度变换，经过两层LSTM后，接着softMax得到一个在全字典上的输出概率。
+模型网络结构如下：
+![image](https://user-images.githubusercontent.com/43362551/51891576-8142eb80-23da-11e9-84c4-66ffdf971818.png)
+训练时batch_size设为16，为了结果的多样性，训练时每次可以选择topK概率的字符作为输出。
+
 定义网络的类的程序代码如下：
 ``` python
 
@@ -175,25 +179,6 @@ class CharRNNLM(object):
             grads, _ = tf.clip_by_global_norm(tf.gradients(self.mean_loss, tvars), self.max_grad_norm)
             optimizer = tf.train.AdamOptimizer(self.learning_rate)
             self.train_op = optimizer.apply_gradients(zip(grads, tvars), global_step=self.global_step)
-
-```
-
-网络结构如下：
-![image](https://user-images.githubusercontent.com/43362551/51891576-8142eb80-23da-11e9-84c4-66ffdf971818.png)
-
-特别注意到的一点是这里每训练完一次就对训练数据做shuffle。
-RNNcell是tensorflow中实现RNN的基本单元，是一个抽象类，在实际应用中多用RNNcell的实现子类BasicRNNCell或者BasicLSTMCell，BasicGRUCell；
-很多时候，单层RNN的能力有限，我们需要多层的RNN。将x输入第一层RNN的后得到隐层状态h，这个隐层状态就相当于第二层RNN的输入，第二层RNN的隐层状态又相当于第三层RNN的输入，以此类推。在TensorFlow中，可以使用tf.nn.rnn_cell.MultiRNNCell函数对RNNCell进行堆叠
-
-它由两层RNN单元Stack得到，在每一个时间点，输入是一个字符，例如图中输入的第一个字符是“床”，通过两层RNN单元运算后得到一个向量，将这个向量经过一层Dense Connect和softMax得到一个在全字典上的输出概率，在训练的时候，我们期望的输出是“前”，这里直接用交叉熵来作为损失函数；接下来，我们将“前”作为下一个时间点的输入，得到新的字符。而在训练完毕后的生成中，为了结果的多样性，每次可以选择topK概率的字符作为输出。
-
-![image](https://user-images.githubusercontent.com/43362551/51891576-8142eb80-23da-11e9-84c4-66ffdf971818.png)
-
-
-这里构建
-
-代码如下：
-``` python
 
 ```
 
