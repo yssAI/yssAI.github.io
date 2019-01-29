@@ -6,7 +6,7 @@
 
 ### 数据处理
 
-我们使用76748首古诗词作为数据集，数据集[下载链接]()，原始的古诗词的存储形式如下：
+我们使用76748首古诗词作为数据集，数据集[下载链接](http://www.momodel.cn:8899/#/explore/5c00a6e21afd942b66b36ba8?type=dataset)，原始的古诗词的存储形式如下：
 ![image](https://user-images.githubusercontent.com/43362551/51824023-221ea180-231c-11e9-8577-6595844d752f.png)
 我们可以看到原始的古诗词是文本符号的形式，无法直接进行机器学习，所以我们第一步需要把文本信息转换为数据形式，这种转换方式就叫词嵌入(word embedding)，我们采用一种常用的词嵌套(word embedding)算法-Word2vec对古诗词进行编码。关于Word2Vec这里不详细讲解，有兴趣的可以参考下面的[文章链接](https://zhuanlan.zhihu.com/p/26306795)。在词嵌套过程中，为了避免最终的分类数过于庞大，可以选择去掉出现频率较小的字，比如可以去掉只出现过一次的字。Word2vec算法经过训练后会产生一个模型文件，我们就可以利用这个模型文件对古诗词文本进行词嵌套编码。
 
@@ -26,7 +26,7 @@
 - poem_ids.txt：按输入输出关系映射处理之后的语料库文件；
 - rhyme_words.txt： 押韵词存储，用于押韵诗的生成；
 
-在提供的源码中已经提供了以上四个数据文件放在data文件夹下，数据处理代码见 data_loader.py 文件，[源码链接]()
+在提供的源码中已经提供了以上四个数据文件放在data文件夹下，数据处理代码见 data_loader.py 文件，[源码链接](http://www.momodel.cn:8899/#/explore/5bfd118f1afd942b66b36b30?type=app)
 
 
 ### 模型构建及训练
@@ -180,7 +180,7 @@ class CharRNNLM(object):
             self.train_op = optimizer.apply_gradients(zip(grads, tvars), global_step=self.global_step)
 
 ```
-训练时可以定义batch_size的值，是否进行dropout，为了结果的多样性，训练时在softmax输出层每次可以选择topK概率的字符作为输出。训练完成后可以使用tensorboard 对网络结构和训练过程可视化展示。这里推荐大家一个在线人工智能建模平台[momodel.cn](momodel.cn)，带有完整的Python和机器学习框架运行环境，并且有免费的GPU可以使用，大家可以训练的时候可以在这个平台上试一下。训练部分的代码和训练好的模型见[链接]()。
+训练时可以定义batch_size的值，是否进行dropout，为了结果的多样性，训练时在softmax输出层每次可以选择topK概率的字符作为输出。训练完成后可以使用tensorboard 对网络结构和训练过程可视化展示。这里推荐大家一个在线人工智能建模平台[momodel.cn](momodel.cn)，带有完整的Python和机器学习框架运行环境，并且有免费的GPU可以使用，大家可以训练的时候可以在这个平台上试一下。训练部分的代码和训练好的模型见[链接](http://www.momodel.cn:8899/#/explore/5bfd118f1afd942b66b36b30?type=app)。
 
 ### 诗词生成
 调用前面训练好的模型我们就可以实现一个古诗词的应用了，我这里是在[上面讲的平台](momodel.cn)中实现的，实现了藏头诗和藏子诗自动生成的功能，运行的效果如下：
