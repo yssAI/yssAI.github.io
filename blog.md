@@ -29,7 +29,154 @@
 在提供的源码中已经提供了以上四个数据文件放在data文件夹下，数据处理代码见 data_loader.py 文件，[源码链接]()
 
 
-### 模型构建
+### 模型构建及训练
+这里我们使用2层的LSTM框架，每层有128个隐藏层节点，batch_size设为16。RNNcell是tensorflow中实现RNN的基本单元，是一个抽象类，在实际应用中多用RNNcell的实现子类BasicRNNCell或者BasicLSTMCell，BasicGRUCell；如果需要构建多层的RNN，在TensorFlow中，可以使用tf.nn.rnn_cell.MultiRNNCell函数对RNNCell进行堆叠。模型网络的第一层要对输入进行 embedding ，可以理解为数据的维度变换，经过两层LSTM后，紧接着Dense Connect和softMax得到一个在全字典上的输出概率，为了结果的多样性，每次可以选择topK概率的字符作为输出。
+定义网络的类的程序代码如下：
+``` python
+
+
+class CharRNNLM(object):
+    def __init__(self, is_training, batch_size, vocab_size, w2v_model,
+                 hidden_size, max_grad_norm, embedding_size, num_layers,
+                 learning_rate, cell_type, dropout=0.0, input_dropout=0.0, infer=False):
+        self.batch_size = batch_size
+        self.hidden_size = hidden_size
+        self.vocab_size = vocab_size
+        self.max_grad_norm = max_grad_norm
+        self.num_layers = num_layers
+        self.embedding_size = embedding_size
+        self.cell_type = cell_type
+        self.dropout = dropout
+        self.input_dropout = input_dropout
+        self.w2v_model = w2v_model
+
+        if embedding_size <= 0:
+            self.input_size = vocab_size
+            self.input_dropout = 0.0
+        else:
+            self.input_size = embedding_size
+
+        self.input_data = tf.placeholder(tf.int64, [self.batch_size, self.num_unrollings], name='inputs')
+        self.targets = tf.placeholder(tf.int64, [self.batch_size, self.num_unrollings], name='targets')
+
+        if self.cell_type == 'rnn':
+            cell_fn = tf.nn.rnn_cell.BasicRNNCell
+        elif self.cell_type == 'lstm':
+            cell_fn = tf.nn.rnn_cell.LSTMCell
+        elif self.cell_type == 'gru':
+            cell_fn = tf.nn.rnn_cell.GRUCell
+
+        params = dict()
+        if self.cell_type == 'lstm':
+            params['forget_bias'] = 1.0
+        cell = cell_fn(self.hidden_size, **params)
+
+        cells = [cell]
+        for i in range(self.num_layers-1):
+            higher_layer_cell = cell_fn(self.hidden_size, **params)
+            cells.append(higher_layer_cell)
+
+        if is_training and self.dropout > 0:
+            cells = [tf.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=1.0-self.dropout) for cell in cells]
+
+        # 对lstm层进行堆叠
+        multi_cell = tf.nn.rnn_cell.MultiRNNCell(cells)
+
+        with tf.name_scope('initial_state'):
+            self.zero_state = multi_cell.zero_state(self.batch_size, tf.float32)
+            if self.cell_type == 'rnn' or self.cell_type == 'gru':
+                self.initial_state = tuple(
+                        [tf.placeholder(tf.float32,
+                            [self.batch_size, multi_cell.state_size[idx]],
+                            'initial_state_'+str(idx+1)) for idx in range(self.num_layers)])
+            elif self.cell_type == 'lstm':
+                self.initial_state = tuple(
+                        [tf.nn.rnn_cell.LSTMStateTuple(
+                            tf.placeholder(tf.float32, [self.batch_size, multi_cell.state_size[idx][0]],
+                                          'initial_lstm_state_'+str(idx+1)),
+                            tf.placeholder(tf.float32, [self.batch_size, multi_cell.state_size[idx][1]],
+                                           'initial_lstm_state_'+str(idx+1)))
+                            for idx in range(self.num_layers)])
+
+        # 定义 embedding 层
+        with tf.name_scope('embedding_layer'):
+            if embedding_size > 0:
+                # self.embedding = tf.get_variable('embedding', [self.vocab_size, self.embedding_size])
+                self.embedding = tf.get_variable("word_embeddings",
+                    initializer=self.w2v_model.vectors.astype(np.float32))
+            else:
+                self.embedding = tf.constant(np.eye(self.vocab_size), dtype=tf.float32)
+
+            inputs = tf.nn.embedding_lookup(self.embedding, self.input_data)
+            if is_training and self.input_dropout > 0:
+                inputs = tf.nn.dropout(inputs, 1-self.input_dropout)
+
+        with tf.name_scope('slice_inputs'):
+            sliced_inputs = [tf.squeeze(input_, [1]) for input_ in tf.split(
+                axis = 1, num_or_size_splits = self.num_unrollings, value = inputs)]
+
+        outputs, final_state = tf.nn.static_rnn(
+                cell = multi_cell,
+                inputs = sliced_inputs,
+                initial_state=self.initial_state)
+        self.final_state = final_state
+
+        with tf.name_scope('flatten_outputs'):
+            flat_outputs = tf.reshape(tf.concat(axis = 1, values = outputs), [-1, hidden_size])
+
+        with tf.name_scope('flatten_targets'):
+            flat_targets = tf.reshape(tf.concat(axis = 1, values = self.targets), [-1])
+
+        # 定义输出层
+        with tf.variable_scope('softmax') as sm_vs:
+            softmax_w = tf.get_variable('softmax_w', [hidden_size, vocab_size])
+            softmax_b = tf.get_variable('softmax_b', [vocab_size])
+            self.logits = tf.matmul(flat_outputs, softmax_w) + softmax_b
+            self.probs = tf.nn.softmax(self.logits)
+
+        # 定义损失函数
+        with tf.name_scope('loss'):
+            loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
+                    logits = self.logits, labels = flat_targets)
+            self.mean_loss = tf.reduce_mean(loss)
+
+        # tensorBoard 损失函数可视化
+        with tf.name_scope('loss_montor'):
+            count = tf.Variable(1.0, name='count')
+            sum_mean_loss = tf.Variable(1.0, name='sum_mean_loss')
+
+            self.reset_loss_monitor = tf.group(sum_mean_loss.assign(0.0),
+                                               count.assign(0.0), name='reset_loss_monitor')
+            self.update_loss_monitor = tf.group(sum_mean_loss.assign(sum_mean_loss+self.mean_loss),
+                                                count.assign(count+1), name='update_loss_monitor')
+
+            with tf.control_dependencies([self.update_loss_monitor]):
+                self.average_loss = sum_mean_loss / count
+                self.ppl = tf.exp(self.average_loss)
+
+            average_loss_summary = tf.summary.scalar(
+                    name = 'average loss', tensor = self.average_loss)
+            ppl_summary = tf.summary.scalar(
+                    name = 'perplexity', tensor = self.ppl)
+
+        self.summaries = tf.summary.merge(
+                inputs = [average_loss_summary, ppl_summary], name='loss_monitor')
+
+        self.global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0.0))
+        self.learning_rate = tf.placeholder(tf.float32, [], name='learning_rate')
+
+        if is_training:
+            tvars = tf.trainable_variables()
+            grads, _ = tf.clip_by_global_norm(tf.gradients(self.mean_loss, tvars), self.max_grad_norm)
+            optimizer = tf.train.AdamOptimizer(self.learning_rate)
+            self.train_op = optimizer.apply_gradients(zip(grads, tvars), global_step=self.global_step)
+
+```
+
+网络结构如下：
+![image](https://user-images.githubusercontent.com/43362551/51891576-8142eb80-23da-11e9-84c4-66ffdf971818.png)
+
+特别注意到的一点是这里每训练完一次就对训练数据做shuffle。
 RNNcell是tensorflow中实现RNN的基本单元，是一个抽象类，在实际应用中多用RNNcell的实现子类BasicRNNCell或者BasicLSTMCell，BasicGRUCell；
 很多时候，单层RNN的能力有限，我们需要多层的RNN。将x输入第一层RNN的后得到隐层状态h，这个隐层状态就相当于第二层RNN的输入，第二层RNN的隐层状态又相当于第三层RNN的输入，以此类推。在TensorFlow中，可以使用tf.nn.rnn_cell.MultiRNNCell函数对RNNCell进行堆叠
 
@@ -38,7 +185,7 @@ RNNcell是tensorflow中实现RNN的基本单元，是一个抽象类，在实际
 ![image](https://user-images.githubusercontent.com/43362551/51891576-8142eb80-23da-11e9-84c4-66ffdf971818.png)
 
 
-这里构建2层的LSTM框架，每层有128个隐藏层节点，batch_size设为64。特别注意到的一点是这里每训练完一次就对训练数据做shuffle。
+这里构建
 
 代码如下：
 ``` python
