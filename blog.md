@@ -189,5 +189,7 @@ class CharRNNLM(object):
 
 新年快到了，赶紧利用算法自动作诗，给亲戚朋友送去最好的祝福，完成代码见[以下链接]()
 
-
-
+参考文章：
+https://www.jianshu.com/p/9dc9f41f0b29
+https://zhuanlan.zhihu.com/p/26306795
+https://github.com/norybaby/poet
