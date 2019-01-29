@@ -187,7 +187,7 @@ class CharRNNLM(object):
 ![image](https://user-images.githubusercontent.com/43362551/51896208-e69cd980-23e6-11e9-9f0a-c6d042b8f5af.png)
 ![image](https://user-images.githubusercontent.com/43362551/51896513-9b36fb00-23e7-11e9-9ef2-a92c25272f3f.png)
 
-
+新年快到了，赶紧利用算法自动作诗，给亲戚朋友送去最好的祝福，完成代码见[以下链接]()
 
 
 
