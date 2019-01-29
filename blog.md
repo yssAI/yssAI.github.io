@@ -185,7 +185,7 @@ class CharRNNLM(object):
 ### 诗词生成
 调用前面训练好的模型我们就可以实现一个古诗词的应用了，我这里是在[上面讲的平台](momodel.cn)中实现的，实现了藏头诗和藏子诗自动生成的功能，运行的效果如下：
 ![image](https://user-images.githubusercontent.com/43362551/51896208-e69cd980-23e6-11e9-9f0a-c6d042b8f5af.png)
-![image](https://user-images.githubusercontent.com/43362551/51896513-9b36fb00-23e7-11e9-9ef2-a92c25272f3f.png)
+![image](https://user-images.githubusercontent.com/43362551/51897625-23b69b00-23ea-11e9-8640-0b64c8252562.png)
 
 新年快到了，赶紧利用算法自动作诗，给亲戚朋友送去最好的祝福，完成代码见[以下链接]()
 
