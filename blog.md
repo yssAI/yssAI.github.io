@@ -180,10 +180,10 @@ class CharRNNLM(object):
             self.train_op = optimizer.apply_gradients(zip(grads, tvars), global_step=self.global_step)
 
 ```
-训练时可以定义batch_size的值，是否进行dropout，为了结果的多样性，训练时在softmax输出层每次可以选择topK概率的字符作为输出。训练完成后可以使用tensorboard 对网络结构和训练过程可视化展示。这里推荐大家一个在线人工智能建模平台[momodel.cn](momodel.cn)，带有完整的Python和机器学习框架运行环境，并且有免费的GPU可以使用，大家可以训练的时候可以在这个平台上试一下。训练部分的代码和训练好的模型见[链接](http://www.momodel.cn:8899/#/explore/5bfd118f1afd942b66b36b30?type=app)。
+训练时可以定义batch_size的值，是否进行dropout，为了结果的多样性，训练时在softmax输出层每次可以选择topK概率的字符作为输出。训练完成后可以使用tensorboard 对网络结构和训练过程可视化展示。这里推荐大家一个在线人工智能建模平台[momodel.cn](http://www.momodel.cn:8899/#/)，带有完整的Python和机器学习框架运行环境，并且有免费的GPU可以使用，大家可以训练的时候可以在这个平台上试一下。训练部分的代码和训练好的模型见[链接](http://www.momodel.cn:8899/#/explore/5bfd118f1afd942b66b36b30?type=app)。
 
 ### 诗词生成
-调用前面训练好的模型我们就可以实现一个古诗词的应用了，我这里是在[上面讲的平台](momodel.cn)中实现的，实现了藏头诗和藏子诗自动生成的功能，运行的效果如下：
+调用前面训练好的模型我们就可以实现一个古诗词的应用了，我这里是在[上面讲的平台](http://www.momodel.cn:8899/#/)中实现的，实现了藏头诗和藏子诗自动生成的功能，运行的效果如下：
 ![image](https://user-images.githubusercontent.com/43362551/51896208-e69cd980-23e6-11e9-9f0a-c6d042b8f5af.png)
 ![image](https://user-images.githubusercontent.com/43362551/51897625-23b69b00-23ea-11e9-8640-0b64c8252562.png)
 
