@@ -21,21 +21,29 @@
 - 将输入数据左移动构成输出标签 train_label；
 
 经过数据处理后我们得到以下数据文件： 
-- poems_edge_split.txt：原始古诗词文件，按行排列，每行为一首诗词。  
-- vectors_poem.bin：利用 Word2Vec训练好的词向量模型，以</s>开头，按词频排列，去除低频词。
-- poem_ids.txt：按输入输出关系映射处理之后的语料库文件
-- rhyme_words.txt： 押韵词存储，用于押韵诗的生成 
+- poems_edge_split.txt：原始古诗词文件，按行排列，每行为一首诗词；
+- vectors_poem.bin：利用 Word2Vec训练好的词向量模型，以</s>开头，按词频排列，去除低频词；
+- poem_ids.txt：按输入输出关系映射处理之后的语料库文件；
+- rhyme_words.txt： 押韵词存储，用于押韵诗的生成；
+
+在提供的源码中已经提供了以上四个数据文件放在data文件夹下，数据处理代码见 data_loader.py 文件，[源码链接]()
 
 
-在提供的源码中已经提供了以上四个数据文件放在data文件夹下，[源码链接]()
+### 模型构建
+RNNcell是tensorflow中实现RNN的基本单元，是一个抽象类，在实际应用中多用RNNcell的实现子类BasicRNNCell或者BasicLSTMCell，BasicGRUCell；
+很多时候，单层RNN的能力有限，我们需要多层的RNN。将x输入第一层RNN的后得到隐层状态h，这个隐层状态就相当于第二层RNN的输入，第二层RNN的隐层状态又相当于第三层RNN的输入，以此类推。在TensorFlow中，可以使用tf.nn.rnn_cell.MultiRNNCell函数对RNNCell进行堆叠
+
+它由两层RNN单元Stack得到，在每一个时间点，输入是一个字符，例如图中输入的第一个字符是“床”，通过两层RNN单元运算后得到一个向量，将这个向量经过一层Dense Connect和softMax得到一个在全字典上的输出概率，在训练的时候，我们期望的输出是“前”，这里直接用交叉熵来作为损失函数；接下来，我们将“前”作为下一个时间点的输入，得到新的字符。而在训练完毕后的生成中，为了结果的多样性，每次可以选择topK概率的字符作为输出。
+
+![image](https://user-images.githubusercontent.com/43362551/51891576-8142eb80-23da-11e9-84c4-66ffdf971818.png)
+
+
+这里构建2层的LSTM框架，每层有128个隐藏层节点，batch_size设为64。特别注意到的一点是这里每训练完一次就对训练数据做shuffle。
 
 代码如下：
 ``` python
 
 ```
-
-### 模型构建
-首先我们要训练好模型。这里采用的是2层的LSTM框架，每层有128个隐藏层节点，batch_size设为64。训练数据来源于全唐诗（可在上面百度云资源分享当中找到）。特别注意到的一点是这里每训练完一次就对训练数据做shuffle。
 
 ### 模型训练
 
